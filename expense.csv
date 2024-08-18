@@ -1,10 +1,3 @@
-Expense Name,Category,Amount,Date
-bar,Entertainment,30.00
-nba game,Entertainment,45.00
-table,Utilities,100.00
-isu,Other,10.00
-iphone,Other,50.0
-bed,Utilities,200.0
-keys,Rent,15.0
-mouse,Entertainment,10.0
-water,Food,10.0
+Date, Expense Name,Category,Amount
+
+2023-08-10,Dinner,Food,30.5
