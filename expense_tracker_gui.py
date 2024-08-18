@@ -180,9 +180,6 @@ class ExpenseTrackerApp:
             categories.append("Remaining Budget")
             amounts.append(remaining_budget)
         
-        if not categories or not amounts:
-            return
-
         # Aggregate the amounts by category
         category_sums = {}
         for category, amount in zip(categories, amounts):
@@ -198,17 +195,25 @@ class ExpenseTrackerApp:
         # Custom colors for the pie chart
         colors = plt.cm.Paired.colors
 
-        # Generate the pie chart
-        fig, ax = plt.subplots(figsize=(7, 7), dpi=100)
-        wedges, texts = ax.pie(amounts, colors=colors, startangle=90)
+        # Highlight "Remaining Budget" with a different color
+        highlight_color = 'red'
+        if "Remaining Budget" in categories:
+            idx = categories.index("Remaining Budget")
+            colors = list(colors)
+            colors[idx] = highlight_color
 
-        # Calculate and move the percentages outside the chart
-        for i, (wedge, text) in enumerate(zip(wedges, texts)):
+        # Generate the pie chart with a small offset for "Remaining Budget"
+        explode = [0.1 if cat == "Remaining Budget" else 0 for cat in categories]
+
+        fig, ax = plt.subplots(figsize=(7, 7), dpi=100)
+        wedges, texts = ax.pie(amounts, explode=explode, colors=colors, startangle=90)
+
+        # Calculate and position percentages manually
+        for i, wedge in enumerate(wedges):
             percentage = f'{amounts[i]/sum(amounts)*100:.1f}%'
-            x, y = wedge.theta2 - (wedge.theta2 - wedge.theta1) / 2, wedge.r
-            angle = wedge.theta2 - (wedge.theta2 - wedge.theta1) / 2
-            x = 1.1 * np.cos(np.radians(angle))
-            y = 1.1 * np.sin(np.radians(angle))
+            angle = (wedge.theta2 + wedge.theta1) / 2
+            x = 1.2 * np.cos(np.radians(angle))
+            y = 1.2 * np.sin(np.radians(angle))
             ax.text(x, y, percentage, ha='center', va='center')
 
         # Add a legend with the categories
@@ -217,7 +222,7 @@ class ExpenseTrackerApp:
         # Highlight the remaining budget slice
         for i, wedge in enumerate(wedges):
             if categories[i] == "Remaining Budget":
-                wedge.set_edgecolor('red')
+                wedge.set_edgecolor('black')
                 wedge.set_linewidth(2)
 
         ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
@@ -226,6 +231,7 @@ class ExpenseTrackerApp:
         chart = FigureCanvasTkAgg(fig, self.chart_frame)
         chart.get_tk_widget().pack()
         chart.draw()
+
 
     def add_expense(self):
         name = self.expense_entry.get()
