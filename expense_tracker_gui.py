@@ -14,53 +14,56 @@ class ExpenseTrackerApp:
         self.root.configure(bg='#f7f7f7')
 
         # Make the GUI full screen
-        self.root.state('zoomed')  # For Windows, use 'zoomed' to make it full screen
+        self.root.state('zoomed')
 
-        # Set up the layout
+        # Initialize attributes
+        self.expenseFilePath = "expense.csv"
+        self.budget = 2000
+        self.expenses = []
+
+        # Initialize Tkinter variables
+        self.category_var = tk.StringVar()
+        self.total_spent_var = tk.StringVar(value="Total Spent: $0.00")
+        self.remaining_budget_var = tk.StringVar(value="Remaining Budget: $0.00")
+
+        # Initialize category options
+        self.category_options = ["Food", "Rent", "Utilities", "Transportation", "Entertainment", "Other"]
+
+        # Create widgets
         self.create_widgets()
 
-        # Expense file path and budget
-        self.expenseFilePath = "expense.csv"
-        self.budget = 2000  # Placeholder budget, can be changed
-
-        # Initialize expense data
-        self.expenses = []
+        # Load data and update summary
         self.load_expenses()
         self.update_summary()
 
     def create_widgets(self):
         # Expense Entry Section
         entry_frame = ttk.LabelFrame(self.root, text="Add New Expense", padding=(10, 10))
-        entry_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        entry_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Expense Name
-        ttk.Label(entry_frame, text="Expense Name:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(entry_frame, text="Expense Name:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.expense_entry = ttk.Entry(entry_frame, width=30)
-        self.expense_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.expense_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
         # Expense Amount
-        ttk.Label(entry_frame, text="Expense Amount:").grid(row=1, column=0, padx=5, pady=5)
+        ttk.Label(entry_frame, text="Expense Amount:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.amount_entry = ttk.Entry(entry_frame, width=30)
-        self.amount_entry.grid(row=1, column=1, padx=5, pady=5)
+        self.amount_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         # Category Dropdown
-        ttk.Label(entry_frame, text="Category:").grid(row=2, column=0, padx=5, pady=5)
-        self.category_options = ["Food", "Rent", "Utilities", "Transportation", "Entertainment", "Other"]
-        self.category_var = tk.StringVar()
+        ttk.Label(entry_frame, text="Category:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.category_dropdown = ttk.Combobox(entry_frame, textvariable=self.category_var, values=self.category_options, state="readonly", width=28)
-        self.category_dropdown.grid(row=2, column=1, padx=5, pady=5)
-        self.category_dropdown.current(0)  # Default to first category
+        self.category_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         # Add Expense Button
         self.add_button = ttk.Button(entry_frame, text="Add Expense", command=self.add_expense)
-        self.add_button.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
+        self.add_button.grid(row=3, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
 
         # Expense Summary Section
         summary_frame = ttk.LabelFrame(self.root, text="Expense Summary", padding=(10, 10))
         summary_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
-        self.total_spent_var = tk.StringVar(value="Total Spent: $0.00")
-        self.remaining_budget_var = tk.StringVar(value="Remaining Budget: $0.00")
         self.total_spent_label = ttk.Label(summary_frame, textvariable=self.total_spent_var, font=('Arial', 10, 'bold'))
         self.remaining_budget_label = ttk.Label(summary_frame, textvariable=self.remaining_budget_var, font=('Arial', 10, 'bold'))
         self.total_spent_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -71,7 +74,7 @@ class ExpenseTrackerApp:
         list_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
         self.expense_listbox = tk.Listbox(list_frame, height=10, width=50)
-        self.expense_listbox.grid(row=0, column=0, padx=5, pady=5)
+        self.expense_listbox.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         self.expense_listbox.bind("<<ListboxSelect>>", self.on_select_expense)
 
         edit_button = ttk.Button(list_frame, text="Edit Expense", command=self.edit_expense)
@@ -86,7 +89,21 @@ class ExpenseTrackerApp:
 
         # Export to Excel Button
         self.export_button = ttk.Button(self.root, text="Export to Excel", command=self.export_to_excel)
-        self.export_button.grid(row=4, column=0, padx=10, pady=10)
+        self.export_button.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
+
+        # Configure grid weights for resizing
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_rowconfigure(2, weight=1)
+        self.root.grid_rowconfigure(3, weight=3)  # Give more space to the chart
+        self.root.grid_rowconfigure(4, weight=0)
+
+        entry_frame.grid_columnconfigure(1, weight=1)
+        list_frame.grid_rowconfigure(0, weight=1)
+        list_frame.grid_columnconfigure(0, weight=1)
+        chart_frame.grid_rowconfigure(0, weight=1)
+        chart_frame.grid_columnconfigure(0, weight=1)
 
     def load_expenses(self):
         if os.path.exists(self.expenseFilePath):
