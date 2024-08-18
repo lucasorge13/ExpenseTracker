@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import csv
 import os
+import numpy as np
 from excel_exporter import exportExpensesToExcel
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
@@ -165,27 +166,42 @@ class ExpenseTrackerApp:
         if not categories or not amounts:
             return
 
+        # Aggregate the amounts by category
+        category_sums = {}
+        for category, amount in zip(categories, amounts):
+            if category in category_sums:
+                category_sums[category] += amount
+            else:
+                category_sums[category] = amount
+
+        # Separate the categories and amounts after aggregation
+        categories = list(category_sums.keys())
+        amounts = list(category_sums.values())
+
         # Custom colors for the pie chart
         colors = plt.cm.Paired.colors
 
         # Generate the pie chart
-        fig, ax = plt.subplots(figsize=(5, 5), dpi=100)
-        wedges, texts, autotexts = ax.pie(amounts, labels=categories, autopct='%1.1f%%', startangle=90, colors=colors)
+        fig, ax = plt.subplots(figsize=(7, 7), dpi=100)
+        wedges, texts = ax.pie(amounts, colors=colors, startangle=90)
+
+        # Calculate and move the percentages outside the chart
+        for i, (wedge, text) in enumerate(zip(wedges, texts)):
+            percentage = f'{amounts[i]/sum(amounts)*100:.1f}%'
+            x, y = wedge.theta2 - (wedge.theta2 - wedge.theta1) / 2, wedge.r
+            angle = wedge.theta2 - (wedge.theta2 - wedge.theta1) / 2
+            x = 1.1 * np.cos(np.radians(angle))
+            y = 1.1 * np.sin(np.radians(angle))
+            ax.text(x, y, percentage, ha='center', va='center')
+
+        # Add a legend with the categories
+        ax.legend(wedges, categories, title="Categories", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
 
         # Highlight the remaining budget slice
         for i, wedge in enumerate(wedges):
             if categories[i] == "Remaining Budget":
                 wedge.set_edgecolor('red')
                 wedge.set_linewidth(2)
-
-        # Move the percentages outside the chart
-        for autotext in autotexts:
-            autotext.set_fontsize(10)
-            autotext.set_color('black')
-            autotext.set_ha('center')
-
-        # Add a legend with the categories
-        ax.legend(wedges, categories, title="Categories", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
 
         ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
