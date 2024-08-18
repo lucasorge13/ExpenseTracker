@@ -28,8 +28,13 @@ def getUserExpense():
     return Expense(expenseName, expenseCategory, expenseAmount)
 
 def saveExpenseToFile(expense, filePath):
-    with open(filePath, "a") as file:
-        file.write(f"{expense.name},{expense.category},{expense.amount:.2f}\n")
+    file_exists = os.path.isfile(filePath)
+    with open(filePath, "a", newline="") as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(["Expense Name", "Category", "Amount"])
+        writer.writerow([expense["name"], expense["category"], expense["amount"]])
+    print("Expense saved successfully.")
 
 def summarizeExpenses(filePath, budget):
     print(f"Summarizing expenses from {filePath}...")
