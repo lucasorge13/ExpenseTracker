@@ -1,6 +1,7 @@
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.chart import PieChart, Reference
+import csv
 import datetime
 
 def exportExpensesToExcel(filePath, budget):
@@ -24,24 +25,30 @@ def exportExpensesToExcel(filePath, budget):
     expenses_by_date = {}
     category_totals = {}
 
-    # Load data from the expense CSV file
+    # Read data from the expense CSV file
     with open(filePath, "r") as file:
-        for line in file:
-            name, category, amount = line.strip().split(",")
-            amount = float(amount)
-            date = datetime.datetime.now()  # Replace with actual date if available
-            date_str = date.strftime("%d %B %Y")
+        reader = csv.DictReader(file)
+        for row in reader:
+            try:
+                name = row["Expense Name"]
+                category = row["Category"]
+                amount = float(row["Amount"])
+                date = datetime.datetime.now().strftime("%d %B %Y")
 
-            if date_str not in expenses_by_date:
-                expenses_by_date[date_str] = {}
-            if category not in expenses_by_date[date_str]:
-                expenses_by_date[date_str][category] = []
+                # Store expenses by date and category
+                if date not in expenses_by_date:
+                    expenses_by_date[date] = {}
+                if category not in expenses_by_date[date]:
+                    expenses_by_date[date][category] = []
 
-            expenses_by_date[date_str][category].append({"name": name, "amount": amount})
-            
-            if category not in category_totals:
-                category_totals[category] = 0
-            category_totals[category] += amount
+                expenses_by_date[date][category].append({"name": name, "amount": amount})
+
+                # Calculate total per category
+                if category not in category_totals:
+                    category_totals[category] = 0
+                category_totals[category] += amount
+            except ValueError as e:
+                print(f"Skipping invalid row: {row}, Error: {e}")
 
     # Write data to the Excel sheet
     row_num = 2
@@ -65,9 +72,9 @@ def exportExpensesToExcel(filePath, budget):
     summary_start_row = row_num + 2
 
     summary_cells = [
-        {"label": "Total Budget:", "value": budget},
-        {"label": "Total Spent:", "value": total_spent},
-        {"label": "Remaining Budget:", "value": budget - total_spent}
+        {"label": "Total Budget:", "value": budget, "color": "000000"},  # Black text for the budget
+        {"label": "Total Spent:", "value": total_spent, "color": "1F4E78"},  # Blue text for the total spent
+        {"label": "Remaining Budget:", "value": budget - total_spent, "color": "FF0000"}  # Red text for remaining budget
     ]
 
     for i, summary in enumerate(summary_cells):
@@ -78,7 +85,7 @@ def exportExpensesToExcel(filePath, budget):
         label_cell.border = border_style
 
         value_cell = sheet.cell(row=summary_start_row + i, column=4, value=summary["value"])
-        value_cell.font = Font(bold=True)
+        value_cell.font = Font(bold=True, color=summary["color"])
         value_cell.alignment = Alignment(horizontal="center")
         value_cell.fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
         value_cell.border = border_style
