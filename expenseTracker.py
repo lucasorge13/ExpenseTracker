@@ -1,4 +1,3 @@
-from expense import Expense
 import csv
 import os
 from excel_exporter import exportExpensesToExcel
@@ -50,6 +49,9 @@ def summarizeExpenses(filePath, budget):
     try:
         with open(filePath, "r") as file:
             reader = csv.DictReader(file)
+            if 'Amount' not in reader.fieldnames:
+                raise ValueError("CSV file is missing the 'Amount' column.")
+            
             for row in reader:
                 amount = float(row["Amount"])
                 totalSpent += amount
@@ -57,8 +59,11 @@ def summarizeExpenses(filePath, budget):
     except FileNotFoundError:
         print("No expenses found. Start by adding your first expense.")
         return []
+    except ValueError as ve:
+        print(f"Error reading expenses: {ve}")
+        return []
     except Exception as e:
-        print(f"Error reading expenses: {e}")
+        print(f"Unexpected error reading expenses: {e}")
         return []
 
     print(f"Total Spent: ${totalSpent:.2f}")
@@ -68,9 +73,9 @@ def summarizeExpenses(filePath, budget):
     return expenses
 
 def main():
-    print(f'Running Expense Tracker!')
+    print(f"Running Expense Tracker!")
     expenseFilePath = "expense.csv"
-    budget = 2000  
+    budget = 2000  # Placeholder budget, could be replaced with user input
 
     expense = getUserExpense()
     saveExpenseToFile(expense, expenseFilePath)
