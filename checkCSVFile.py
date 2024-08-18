@@ -1,34 +1,62 @@
 import csv
 import os
+import logging
 
-def check_and_fix_csv(filePath):
-    required_headers = ["Expense Name", "Category", "Amount"]
-    
-    # Check if the file exists
-    if not os.path.exists(filePath):
-        print(f"{filePath} does not exist. A new file will be created.")
-        with open(filePath, "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(required_headers)
-        return
+# Set up logging
+logging.basicConfig(filename='checkCSVFile.log', level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # Read the existing headers
-    with open(filePath, "r") as file:
-        reader = csv.reader(file)
-        headers = next(reader, None)
-        
-        if headers != required_headers:
-            print("CSV file headers are incorrect or missing. Fixing headers...")
-            data = list(reader)  # Read the rest of the data
+def validate_csv_file(file_path):
+    """
+    Validate the structure and content of the CSV file.
 
-            # Recreate the file with correct headers
-            with open(filePath, "w", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow(required_headers)
-                writer.writerows(data)  # Write the existing data back into the file
-        else:
-            print("CSV file headers are correct.")
+    Args:
+        file_path (str): The path to the CSV file.
 
-# Run the check on your CSV file
-expenseFilePath = "expense.csv"
-check_and_fix_csv(expenseFilePath)
+    Returns:
+        bool: True if the file is valid, False otherwise.
+    """
+    required_columns = ["Date", "Expense Name", "Category", "Amount"]
+
+    if not os.path.exists(file_path):
+        logging.error(f"File not found: {file_path}")
+        print("Error: File not found.")
+        return False
+
+    try:
+        with open(file_path, mode='r') as file:
+            reader = csv.DictReader(file)
+            headers = reader.fieldnames
+
+            # Check for missing columns
+            missing_columns = [col for col in required_columns if col not in headers]
+            if missing_columns:
+                logging.error(f"Missing columns: {missing_columns}")
+                print(f"Error: Missing columns: {missing_columns}")
+                return False
+
+            # Validate data types
+            for row in reader:
+                try:
+                    float(row["Amount"])
+                except ValueError:
+                    logging.error(f"Invalid amount found: {row['Amount']} in row {reader.line_num}")
+                    print(f"Error: Invalid amount found in row {reader.line_num}.")
+                    return False
+
+                # Additional validations can be added here (e.g., date format, category validation)
+
+        logging.info("CSV file validated successfully.")
+        print("CSV file validated successfully.")
+        return True
+
+    except Exception as e:
+        logging.exception(f"Failed to validate CSV file: {str(e)}")
+        print(f"Error: Failed to validate CSV file: {str(e)}")
+        return False
+
+
+# Example usage
+if __name__ == "__main__":
+    file_path = 'expense.csv'  # Replace with your actual file path
+    validate_csv_file(file_path)

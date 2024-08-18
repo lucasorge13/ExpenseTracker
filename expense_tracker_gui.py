@@ -4,7 +4,7 @@ import csv
 import os
 import numpy as np
 import pandas as pd
-from excel_exporter import exportExpensesToExcel
+from excel_exporter import export_expenses_to_excel
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 
@@ -444,7 +444,7 @@ class ExpenseTrackerApp:
 
     def export_to_excel(self):
         try:
-            exportExpensesToExcel(self.expenseFilePath, self.budget)
+            export_expenses_to_excel(self.expenseFilePath, self.budget)
             messagebox.showinfo("Success", "Expenses have been exported to Excel.")
         except Exception as e:
             messagebox.showerror("Export Error", f"Failed to export expenses: {e}")
