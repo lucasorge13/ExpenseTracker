@@ -4,28 +4,33 @@ import os
 from excel_exporter import exportExpensesToExcel
 
 def getUserExpense():
-    print(f"Getting User Expense!")
-
-    expenseName = input("Enter expense name: ")
-    expenseAmount = float(input("Enter expense amount: "))
-
-    expenseCategories = [
-        "Food", 
-        "Rent", 
-        "Utilities", 
-        "Transportation", 
-        "Entertainment", 
-        "Other"
-    ]
-
-    print("Available categories:")
-    for index, category in enumerate(expenseCategories, start=1):
-        print(f"{index}. {category}")
+    print("Getting User Expense!")
+    while True:
+        try:
+            name = input("Enter expense name: ").strip()
+            if not name:
+                raise ValueError("Expense name cannot be empty.")
+            
+            amount = float(input("Enter expense amount: ").strip())
+            if amount <= 0:
+                raise ValueError("Expense amount must be a positive number.")
+            
+            print("Available categories:")
+            categories = ["Food", "Rent", "Utilities", "Transportation", "Entertainment", "Other"]
+            for i, category in enumerate(categories, start=1):
+                print(f"{i}. {category}")
+            
+            category_num = int(input("Select a category number: ").strip())
+            if category_num not in range(1, len(categories) + 1):
+                raise ValueError("Invalid category number selected.")
+            
+            category = categories[category_num - 1]
+            break
+        except ValueError as e:
+            print(f"Error: {e}. Please try again.")
     
-    categoryIndex = int(input("Select a category number: ")) - 1
-    expenseCategory = expenseCategories[categoryIndex]
-
-    return Expense(expenseName, expenseCategory, expenseAmount)
+    print(f"Expense added: {name}, {category}, ${amount:.2f}")
+    return {"name": name, "category": category, "amount": amount}
 
 def saveExpenseToFile(expense, filePath):
     file_exists = os.path.isfile(filePath)
