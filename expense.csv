@@ -1,3 +1,4 @@
+Expense Name,Category,Amount
 sushi,Food,12.00
 hbo,Entertainment,12.00
 netflix,Entertainment,20.00
@@ -13,3 +14,5 @@ isu,Other,10.00
 isu,Other,10.00
 iphone,Other,50.0
 bed,Utilities,200.0
+keys,Rent,15.0
+mouse,Entertainment,10.0
