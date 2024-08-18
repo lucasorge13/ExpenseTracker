@@ -1,15 +1,9 @@
 Expense Name,Category,Amount
-sushi,Food,12.00
-hbo,Entertainment,12.00
-netflix,Entertainment,20.00
-gas,Transportation,60.00
-rent,Rent,730.00
 school materials,Utilities,30.00
 bar,Entertainment,30.00
 audi,Food,50.00
 nba game,Entertainment,45.00
 table,Utilities,100.00
-isu,Other,10.00
 isu,Other,10.00
 isu,Other,10.00
 iphone,Other,50.0
@@ -18,4 +12,3 @@ keys,Rent,15.0
 mouse,Entertainment,10.0
 water,Food,10.0
 chipotle,Food,13.0
-Youtube,Entertainment,12.0

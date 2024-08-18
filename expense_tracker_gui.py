@@ -11,14 +11,17 @@ class ExpenseTrackerApp:
         self.root = root
         self.root.title("Expense Tracker")
         self.root.configure(bg='#f7f7f7')
-        
+
+        # Make the GUI full screen
+        self.root.state('zoomed')  # For Windows, use 'zoomed' to make it full screen
+
         # Set up the layout
         self.create_widgets()
-        
+
         # Expense file path and budget
         self.expenseFilePath = "expense.csv"
         self.budget = 2000  # Placeholder budget, can be changed
-        
+
         # Initialize expense data
         self.expenses = []
         self.load_expenses()
@@ -152,6 +155,13 @@ class ExpenseTrackerApp:
         # Prepare data for the pie chart
         categories = [expense["Category"] for expense in self.expenses]
         amounts = [float(expense["Amount"]) for expense in self.expenses]
+        remaining_budget = self.budget - sum(amounts)
+        
+        # Adding the remaining budget to the chart
+        if remaining_budget > 0:
+            categories.append("Remaining Budget")
+            amounts.append(remaining_budget)
+        
         if not categories or not amounts:
             return
 
@@ -160,8 +170,24 @@ class ExpenseTrackerApp:
 
         # Generate the pie chart
         fig, ax = plt.subplots(figsize=(5, 5), dpi=100)
-        ax.pie(amounts, labels=categories, autopct='%1.1f%%', startangle=90, colors=colors)
-        ax.axis('equal')
+        wedges, texts, autotexts = ax.pie(amounts, labels=categories, autopct='%1.1f%%', startangle=90, colors=colors)
+
+        # Highlight the remaining budget slice
+        for i, wedge in enumerate(wedges):
+            if categories[i] == "Remaining Budget":
+                wedge.set_edgecolor('red')
+                wedge.set_linewidth(2)
+
+        # Move the percentages outside the chart
+        for autotext in autotexts:
+            autotext.set_fontsize(10)
+            autotext.set_color('black')
+            autotext.set_ha('center')
+
+        # Add a legend with the categories
+        ax.legend(wedges, categories, title="Categories", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
         # Display the chart in the Tkinter window
         chart = FigureCanvasTkAgg(fig, self.chart_frame)
