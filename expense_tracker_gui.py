@@ -48,131 +48,96 @@ class ExpenseTrackerApp:
         self.amount_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         ttk.Label(entry_frame, text="Category:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        self.category_dropdown = ttk.Combobox(entry_frame, textvariable=self.category_var, values=self.category_options, state="readonly", width=28)
-        self.category_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-        self.category_dropdown.current(0)  # Default to first category
+        self.category_menu = ttk.OptionMenu(entry_frame, self.category_var, self.category_options[0], *self.category_options)
+        self.category_menu.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
-        add_button = ttk.Button(entry_frame, text="Add Expense", command=self.add_expense)
-        add_button.grid(row=3, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
+        add_button = ttk.Button(entry_frame, text="Add Expense", command=self.validate_and_add_expense)
+        add_button.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
 
-    def create_summary_frame(self):
-        summary_frame = ttk.LabelFrame(self.root, text="Expense Summary", padding=(10, 10))
-        summary_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
-
-        self.total_spent_label = ttk.Label(summary_frame, textvariable=self.total_spent_var, font=('Arial', 10, 'bold'))
-        self.remaining_budget_label = ttk.Label(summary_frame, textvariable=self.remaining_budget_var, font=('Arial', 10, 'bold'))
-        self.total_spent_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.remaining_budget_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-
-    def create_chart_frame(self):
-        self.chart_frame = ttk.LabelFrame(self.root, text="Expense Chart", padding=(10, 10))
-        self.chart_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
-        self.root.grid_rowconfigure(2, weight=1)
-        self.root.grid_columnconfigure(0, weight=1)
-
-    def create_dashboard_frame(self):
-            dashboard_frame = ttk.LabelFrame(self.root, text="Dashboard Overview", padding=(10, 10))
-            dashboard_frame.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
-            self.root.grid_rowconfigure(3, weight=1)
-            self.root.grid_columnconfigure(0, weight=1)
-
-            # Add key metrics to the dashboard
-            ttk.Label(dashboard_frame, textvariable=self.total_spent_var, font=('Arial', 12, 'bold')).grid(row=0, column=0, padx=10, pady=5, sticky="w")
-            ttk.Label(dashboard_frame, textvariable=self.remaining_budget_var, font=('Arial', 12, 'bold')).grid(row=1, column=0, padx=10, pady=5, sticky="w")
-            ttk.Label(dashboard_frame, textvariable=self.highest_spending_category_var, font=('Arial', 12, 'bold')).grid(row=2, column=0, padx=10, pady=5, sticky="w")
-
-            # Optionally, add more detailed charts or lists here for a comprehensive overview
-
-    def create_export_button(self):
-        self.export_button = ttk.Button(self.root, text="Export to Excel", command=self.export_expenses)
-        self.export_button.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
-
-    def load_expenses(self):
-        self.expenses = load_expenses(self.expenseFilePath)
-
-    def add_expense(self):
-        date = tk.StringVar(value="2023-08-10")  # Default date, this can be made dynamic
-        name = self.expense_entry.get()
-        amount = self.amount_entry.get()
+    def validate_and_add_expense(self):
+        name = self.expense_entry.get().strip()
+        amount = self.amount_entry.get().strip()
         category = self.category_var.get()
 
-        if not name or not amount or not category:
-            messagebox.showerror("Input Error", "All fields are required.")
+        if not name or not amount:
+            messagebox.showerror("Input Error", "Expense name and amount are required.")
             return
 
         try:
             amount = float(amount)
         except ValueError:
-            messagebox.showerror("Input Error", "Please enter a valid amount.")
+            messagebox.showerror("Input Error", "Please enter a valid numeric amount.")
             return
 
-        add_expense(self.expenseFilePath, date.get(), name, category, amount)
+        if amount <= 0:
+            messagebox.showerror("Input Error", "Amount should be greater than zero.")
+            return
+
+        self.add_expense_to_file(name, category, amount)
         self.load_expenses()
         self.update_summary()
-        self.clear_inputs()
+        self.update_charts()
+
+    def add_expense_to_file(self, name, category, amount):
+        from datetime import datetime
+        date = datetime.now().strftime("%Y-%m-%d")
+        add_expense(self.expenseFilePath, date, name, category, amount)
+        messagebox.showinfo("Success", f"Added {name} to expenses.")
+
+    def create_summary_frame(self):
+        summary_frame = ttk.LabelFrame(self.root, text="Summary", padding=(10, 10))
+        summary_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
+        ttk.Label(summary_frame, textvariable=self.total_spent_var).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(summary_frame, textvariable=self.remaining_budget_var).grid(row=1, column=0, padx=5, pady=5, sticky="w")
+
+    def create_chart_frame(self):
+        chart_frame = ttk.LabelFrame(self.root, text="Expense Charts", padding=(10, 10))
+        chart_frame.grid(row=0, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.fig, self.ax = plt.subplots(figsize=(8, 6))
+        self.canvas = FigureCanvasTkAgg(self.fig, master=chart_frame)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        self.update_charts()
+
+    def update_charts(self):
+        if not self.expenses:
+            return
+
+        self.ax.clear()
+        df = pd.DataFrame(self.expenses)
+        
+        # Convert Amount column to numeric, forcing errors to NaN and then dropping them
+        df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce")
+        
+        # Drop any rows where Amount could not be converted to a float
+        df = df.dropna(subset=["Amount"])
+        
+        # Group by category and sum the amounts
+        category_totals = df.groupby("Category")["Amount"].sum()
+
+        # Pie chart
+        self.ax.pie(category_totals, labels=category_totals.index, autopct='%1.1f%%', startangle=140, colors=plt.cm.Pastel1.colors)
+        self.ax.set_title("Expenses by Category")
+        self.canvas.draw()
 
     def update_summary(self):
-        total_spent = sum(float(expense["Amount"]) for expense in self.expenses)
+        total_spent = sum(float(exp["Amount"]) for exp in self.expenses)
         remaining_budget = self.budget - total_spent
         self.total_spent_var.set(f"Total Spent: ${total_spent:.2f}")
         self.remaining_budget_var.set(f"Remaining Budget: ${remaining_budget:.2f}")
-        self.update_pie_chart()
 
-    def update_pie_chart(self):
-        for widget in self.chart_frame.winfo_children():
-            widget.destroy()
+    def load_expenses(self):
+        self.expenses = load_expenses(self.expenseFilePath)
 
-        categories = [expense["Category"] for expense in self.expenses]
-        amounts = [float(expense["Amount"]) for expense in self.expenses]
-        remaining_budget = self.budget - sum(amounts)
+    def create_export_button(self):
+        export_button = ttk.Button(self.root, text="Export to Excel", command=self.export_to_excel)
+        export_button.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-        if remaining_budget > 0:
-            categories.append("Remaining Budget")
-            amounts.append(remaining_budget)
-
-        category_sums = {}
-        for category, amount in zip(categories, amounts):
-            if category not in category_sums:
-                category_sums[category] = 0
-            category_sums[category] += amount
-
-        categories = list(category_sums.keys())
-        amounts = list(category_sums.values())
-
-        pastel_colors = plt.cm.Pastel1.colors
-        colors = pastel_colors[:len(categories)]
-
-        explode = [0.1 if cat == "Remaining Budget" else 0 for cat in categories]
-
-        fig, ax = plt.subplots(figsize=(7, 7), dpi=100)
-        wedges, texts = ax.pie(amounts, explode=explode, colors=colors, startangle=90)
-
-        for i, wedge in enumerate(wedges):
-            percentage = f'{amounts[i]/sum(amounts)*100:.1f}%'
-            angle = (wedge.theta2 + wedge.theta1) / 2
-            x = 1.2 * np.cos(np.radians(angle))
-            y = 1.2 * np.sin(np.radians(angle))
-            ax.text(x, y, percentage, ha='center', va='center')
-
-        ax.legend(wedges, categories, title="Categories", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
-        for i, wedge in enumerate(wedges):
-            if categories[i] == "Remaining Budget":
-                wedge.set_edgecolor('black')
-                wedge.set_linewidth(2)
-
-        ax.axis('equal')
-        chart = FigureCanvasTkAgg(fig, self.chart_frame)
-        chart.get_tk_widget().pack()
-        chart.draw()
-
-    def clear_inputs(self):
-        self.expense_entry.delete(0, tk.END)
-        self.amount_entry.delete(0, tk.END)
-        self.category_dropdown.current(0)
-
-    def export_expenses(self):
+    def export_to_excel(self):
         export_expenses_to_excel(self.expenses)
-        messagebox.showinfo("Export Complete", "Expenses have been successfully exported to Excel.")
+        messagebox.showinfo("Export Successful", "Expenses have been exported to expense_summary.xlsx.")
 
 if __name__ == "__main__":
     root = tk.Tk()
