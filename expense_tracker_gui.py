@@ -70,6 +70,19 @@ class ExpenseTrackerApp:
         self.root.grid_rowconfigure(2, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
 
+    def create_dashboard_frame(self):
+            dashboard_frame = ttk.LabelFrame(self.root, text="Dashboard Overview", padding=(10, 10))
+            dashboard_frame.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
+            self.root.grid_rowconfigure(3, weight=1)
+            self.root.grid_columnconfigure(0, weight=1)
+
+            # Add key metrics to the dashboard
+            ttk.Label(dashboard_frame, textvariable=self.total_spent_var, font=('Arial', 12, 'bold')).grid(row=0, column=0, padx=10, pady=5, sticky="w")
+            ttk.Label(dashboard_frame, textvariable=self.remaining_budget_var, font=('Arial', 12, 'bold')).grid(row=1, column=0, padx=10, pady=5, sticky="w")
+            ttk.Label(dashboard_frame, textvariable=self.highest_spending_category_var, font=('Arial', 12, 'bold')).grid(row=2, column=0, padx=10, pady=5, sticky="w")
+
+            # Optionally, add more detailed charts or lists here for a comprehensive overview
+
     def create_export_button(self):
         self.export_button = ttk.Button(self.root, text="Export to Excel", command=self.export_expenses)
         self.export_button.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
