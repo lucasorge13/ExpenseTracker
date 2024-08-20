@@ -19,6 +19,7 @@ class ExpenseTrackerApp:
         self.budget = 2000
         self.budget_var = tk.DoubleVar(value=self.budget)
 
+
         self.category_var = tk.StringVar()
         self.total_spent_var = tk.StringVar(value="Total Spent: $0.00")
         self.remaining_budget_var = tk.StringVar(value="Remaining Budget: $0.00")
@@ -135,7 +136,7 @@ class ExpenseTrackerApp:
 
     def create_expense_table(self):
         table_frame = ttk.LabelFrame(self.root, text="Recorded Expenses", padding=(10, 10))
-        table_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        table_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         self.tree = ttk.Treeview(table_frame, columns=("Date", "Name", "Category", "Amount"), show="headings")
         self.tree.heading("Date", text="Date")
@@ -144,8 +145,7 @@ class ExpenseTrackerApp:
         self.tree.heading("Amount", text="Amount")
 
         self.tree.pack(fill=tk.BOTH, expand=True)
-
-        self.tree.bind("<Double-1>", self.on_item_selected)
+        self.tree.update_idletasks()  # Force UI update
 
     def on_item_selected(self, event):
         selected_item = self.tree.selection()[0]
@@ -269,8 +269,12 @@ class ExpenseTrackerApp:
         self.expenses = load_expenses(self.expenseFilePath)
         self.tree.delete(*self.tree.get_children())  # Clear the treeview
 
+        print("Loading expenses...")
         for i, expense in enumerate(self.expenses):
+            print(f"Inserting expense {i}: {expense}")
             self.tree.insert('', 'end', iid=i, values=(expense["Date"], expense["Expense Name"], expense["Category"], expense["Amount"]))
+        
+        self.tree.update_idletasks()  # Force UI update
 
     def update_summary(self):
         total_spent = sum(float(exp["Amount"]) for exp in self.expenses)
