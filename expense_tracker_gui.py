@@ -181,7 +181,6 @@ class ExpenseTrackerApp:
             if not new_name or not new_amount:
                 messagebox.showerror("Input Error", "Expense name and amount are required.")
                 return
-
             try:
                 new_amount = float(new_amount)
             except ValueError:
