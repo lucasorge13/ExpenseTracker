@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+import pandas as pd
 
 def load_expenses(file_path):
     """
