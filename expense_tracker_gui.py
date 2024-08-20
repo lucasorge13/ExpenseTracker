@@ -92,12 +92,21 @@ class ExpenseTrackerApp:
         ttk.Label(summary_frame, textvariable=self.remaining_budget_var).grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
     def create_chart_frame(self):
-        chart_frame = ttk.LabelFrame(self.root, text="Expense Charts", padding=(10, 10))
-        chart_frame.grid(row=0, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
+        # Frame for the Pie Chart
+        pie_chart_frame = ttk.LabelFrame(self.root, text="Expenses by Category", padding=(10, 10))
+        pie_chart_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-        self.fig, self.ax = plt.subplots(figsize=(8, 6))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=chart_frame)
-        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.fig_pie, self.ax_pie = plt.subplots(figsize=(6, 5))
+        self.canvas_pie = FigureCanvasTkAgg(self.fig_pie, master=pie_chart_frame)
+        self.canvas_pie.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        # Frame for the Bar Chart
+        bar_chart_frame = ttk.LabelFrame(self.root, text="Expenses by Month", padding=(10, 10))
+        bar_chart_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+
+        self.fig_bar, self.ax_bar = plt.subplots(figsize=(6, 5))
+        self.canvas_bar = FigureCanvasTkAgg(self.fig_bar, master=bar_chart_frame)
+        self.canvas_bar.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         self.update_charts()
 
@@ -105,7 +114,10 @@ class ExpenseTrackerApp:
         if not self.expenses:
             return
 
-        self.ax.clear()
+        # Clear previous figures
+        self.ax_pie.clear()
+        self.ax_bar.clear()
+
         df = pd.DataFrame(self.expenses)
         
         # Convert Amount column to numeric, forcing errors to NaN and then dropping them
@@ -113,14 +125,31 @@ class ExpenseTrackerApp:
         
         # Drop any rows where Amount could not be converted to a float
         df = df.dropna(subset=["Amount"])
-        
-        # Group by category and sum the amounts
+
+        # Convert Date to datetime format for easier manipulation
+        df["Date"] = pd.to_datetime(df["Date"])
+
+        # Group by category and sum the amounts for the pie chart
         category_totals = df.groupby("Category")["Amount"].sum()
 
-        # Pie chart
-        self.ax.pie(category_totals, labels=category_totals.index, autopct='%1.1f%%', startangle=140, colors=plt.cm.Pastel1.colors)
-        self.ax.set_title("Expenses by Category")
-        self.canvas.draw()
+        # Plot the pie chart
+        self.ax_pie.pie(category_totals, labels=category_totals.index, autopct='%1.1f%%', startangle=140, colors=plt.cm.Pastel1.colors)
+        self.ax_pie.set_title("Expenses by Category")
+
+        # Group by month and sum the amounts for the bar chart
+        df["Month"] = df["Date"].dt.to_period("M")
+        monthly_totals = df.groupby("Month")["Amount"].sum()
+
+        # Plot the bar chart
+        monthly_totals.plot(kind="bar", ax=self.ax_bar, color="skyblue", edgecolor="black")
+        self.ax_bar.set_title("Expenses by Month")
+        self.ax_bar.set_xlabel("Month")
+        self.ax_bar.set_ylabel("Total Expenses")
+
+        # Redraw the canvases with the updated figures
+        self.canvas_pie.draw()
+        self.canvas_bar.draw()
+
 
     def update_summary(self):
         total_spent = sum(float(exp["Amount"]) for exp in self.expenses)
