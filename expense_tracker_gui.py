@@ -150,7 +150,6 @@ class ExpenseTrackerApp:
         self.canvas_pie.draw()
         self.canvas_bar.draw()
 
-
     def update_summary(self):
         total_spent = sum(float(exp["Amount"]) for exp in self.expenses)
         remaining_budget = self.budget - total_spent
